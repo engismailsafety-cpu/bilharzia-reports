@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>نظام التقارير الأسبوعية - البلهارسيا والفاشيولا</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #ffffff; font-family: 'Segoe UI', 'Tahoma', 'Traditional Arabic', Arial, sans-serif; padding: 16px; }
+        .app-container { max-width: 100%; margin: 0 auto; background: #ffffff; overflow-x: auto; padding: 15px 18px 20px 18px; }
+        .control-bar { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 20px; background: #f5f5f5; padding: 10px 18px; border-radius: 12px; border: 1px solid #e0e0e0; }
+        h1 { font-size: 1.1rem; color: #136b5e; background: #f0f0f0; padding: 4px 14px; border-radius: 8px; display: inline-block; }
+        button { background: #1f6392; color: white; border: none; padding: 7px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 0.8rem; transition: 0.2s; }
+        button:hover { background: #0f4a6e; }
+        .btn-pdf { background: #1f7a5a; }
+        .btn-reset { background: #8b8b8b; }
+        .btn-save { background: #d4a017; }
+        .btn-save:hover { background: #b8860b; }
+        .date-single-cell { background: #fff8f0; padding: 8px 20px; border-radius: 12px; border: 2px solid #ffccaa; display: inline-flex; align-items: center; gap: 15px; flex-wrap: wrap; }
+        .date-single-cell label { font-weight: bold; color: #cc0000; font-size: 0.85rem; }
+        .date-single-cell input, .date-single-cell select { padding: 6px 12px; border-radius: 8px; border: 1px solid #ccc; font-family: monospace; }
+        .date-panel { background: #fafafa; border-radius: 12px; padding: 10px 18px; margin-bottom: 20px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 15px; border: 1px solid #e0e0e0; }
+        .week-control { background: #fff0f0; padding: 5px 16px; border-radius: 8px; border: 1px solid #ffcccc; display: flex; align-items: center; gap: 8px; }
+        .week-control span { font-weight: bold; color: #cc0000; font-size: 0.8rem; }
+        .week-spinner { display: flex; align-items: center; gap: 5px; }
+        .week-spinner input { width: 70px; text-align: center; padding: 5px; border-radius: 6px; border: 1px solid #ccc; font-size: 0.9rem; }
+        .week-spinner button { background: #e0e0e0; color: #333; padding: 5px 10px; font-size: 1rem; margin: 0; }
+        .week-spinner button:hover { background: #ccc; }
+        .reports-sidebar { background: #f5f5f0; border-radius: 12px; padding: 12px; margin-bottom: 20px; border: 1px solid #ddd; }
+        .reports-header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 10px; }
+        .filter-section { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+        .filter-section select, .filter-section input { padding: 6px 12px; border-radius: 8px; border: 1px solid #ccc; }
+        .monthly-stats { background: #e8f0fe; padding: 8px 12px; border-radius: 8px; margin: 8px 0; font-size: 0.75rem; color: #1f6392; }
+        .monthly-stats span { font-weight: bold; color: #cc0000; }
+        .reports-list { max-height: 200px; overflow-y: auto; border-top: 1px solid #ddd; padding-top: 8px; }
+        .report-item { background: white; padding: 6px 12px; margin: 4px 0; border-radius: 6px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; border: 1px solid #e0e0e0; }
+        .report-item:hover { background: #e8f0fe; border-color: #1f6392; }
+        .report-date { font-weight: bold; color: #1f6392; }
+        .report-actions { display: flex; gap: 8px; }
+        .report-actions button { padding: 2px 8px; font-size: 0.7rem; background: #ddd; color: #333; }
+        #pdfContent { background: #ffffff; padding: 12px 10px 16px 10px; width: 100%; }
+        .report-header { text-align: center; margin-bottom: 15px; }
+        .report-header h2 { font-size: 1rem; margin: 3px 0; color: #1a5f6e; }
+        .report-header .subtitle { font-size: 0.75rem; color: #2f6b47; font-weight: bold; }
+        .page-title { font-size: 0.9rem; font-weight: bold; color: #cc0000; background: #fff0f0; padding: 6px; border-radius: 8px; margin-top: 8px; margin-bottom: 5px; border: 1px solid #ffcccc; }
+        .report-date-red { color: #cc0000; font-weight: bold; font-size: 0.75rem; margin-top: 5px; }
+        .report-table { margin: 8px 0; border-radius: 8px; border: 1px solid #ddd; width: 100%; overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.58rem; font-family: monospace; table-layout: fixed; }
+        th, td { border: 1px solid #aaa; padding: 6px 4px; text-align: center; vertical-align: middle; }
+        th { background-color: #f0f0f0; color: #1a4d5f; font-weight: bold; font-size: 0.55rem; }
+        .subgroup { background-color: #f5f5f5; font-weight: bold; }
+        .schools-row { background-color: #fff8f0; }
+        input.table-input { width: 100%; max-width: 52px; text-align: center; border: 1px solid #ffaaaa; border-radius: 6px; padding: 5px 2px; font-size: 0.65rem; background-color: #ffffff; color: #cc0000; font-weight: bold; }
+        .nationalities-wrapper { margin-top: 20px; display: flex; justify-content: center; }
+        .nationalities-table { width: 66%; border: 1px solid #ddd; border-radius: 8px; background: #ffffff; padding: 8px; overflow-x: auto; }
+        .nationalities-table table { width: 100%; border-collapse: collapse; font-size: 0.55rem; table-layout: auto; }
+        .nationalities-table th { background: #f0f0f0; font-size: 0.52rem; padding: 5px 3px; }
+        .nationalities-table td { padding: 4px 2px; border: 1px solid #aaa; }
+        .nationalities-table input.table-input { max-width: 45px; width: 45px; }
+        .footer-note { margin-top: 18px; display: flex; justify-content: space-between; align-items: baseline; border-top: 1px solid #ddd; padding-top: 12px; font-size: 0.68rem; }
+        .signature-left { text-align: right; }
+        .signature-right { text-align: left; }
+        .totals-row { background: #f9f9f9; font-weight: bold; }
+        .small-note { font-size: 0.6rem; color: #888; }
+        .error-msg { color: red; background: #ffe0e0; padding: 5px 10px; border-radius: 8px; margin: 5px 0; display: none; }
+        .success-msg { color: green; background: #e0ffe0; padding: 5px 10px; border-radius: 8px; margin: 5px 0; display: none; }
+    </style>
+</head>
+<body>
+<div class="app-container">
+    <div class="control-bar no-print">
+        <h1>🧪 وكيل التقارير - البلهارسيا والفاشيولا</h1>
+        <div>
+            <button id="saveReportBtn" class="btn-save">💾 حفظ التقرير</button>
+            <button id="generatePdfBtn" class="btn-pdf">📄 استخراج PDF</button>
+            <button id="resetDefaultBtn" class="btn-reset">🧹 مسح الخلايا</button>
+        </div>
+    </div>
+    <div id="errorMsg" class="error-msg"></div>
+    <div id="successMsg" class="success-msg"></div>
+
+    <div class="date-panel no-print">
+        <div class="date-single-cell">
+            <label>📅 تاريخ & يوم نهاية الأسبوع:</label>
+            <input type="date" id="endDate" value="2026-05-24">
+            <select id="endDaySelect">
+                <option value="0">الأحد</option><option value="1">الإثنين</option><option value="2">الثلاثاء</option>
+                <option value="3">الأربعاء</option><option value="4">الخميس</option><option value="5">الجمعة</option>
+                <option value="6" selected>السبت</option>
+            </select>
+        </div>
+        <div class="week-control">
+            <span>📅 الأسبوع الدولي رقم:</span>
+            <div class="week-spinner">
+                <button id="weekDownBtn" style="background:#ddd;">−</button>
+                <input type="number" id="customWeekNumber" value="21" min="1" max="53" step="1">
+                <button id="weekUpBtn" style="background:#ddd;">+</button>
+            </div>
+            <button id="autoWeekBtn" style="background:#ddd; color:#333; padding:4px 12px;">تلقائي</button>
+        </div>
+    </div>
+
+    <div class="reports-sidebar no-print">
+        <div class="reports-header">
+            <span style="font-weight: bold;">📋 سجل التقارير</span>
+            <div class="filter-section">
+                <select id="monthFilter"><option value="all">كل الشهور</option></select>
+                <input type="text" id="searchReports" placeholder="بحث...">
+                <button id="clearSearchBtn" style="background:#ddd;">مسح</button>
+            </div>
+        </div>
+        <div id="monthlyStats" class="monthly-stats" style="display:none;"></div>
+        <div id="reportsList" class="reports-list"><div style="color:#888; text-align:center;">لا توجد تقارير</div></div>
+        <div class="small-note">انقر على تقرير لتحميل بياناته</div>
+    </div>
+
+    <div id="pdfContent">
+        <div class="report-header">
+            <h2>الإدارة الصحية بمطوبــــــــــــس</h2>
+            <div class="subtitle">وحدة الجزيرة الخضراء الصحية</div>
+            <div class="page-title" id="reportMainTitle">البلاغ الاسبوعي للإصابة بالبلهارسيا والفاشيولا عن وحدة الجزيرة الخضراء</div>
+            <div class="report-date-red" id="dynamicDateWeek"></div>
+        </div>
+
+        <div class="report-table">
+            <table>
+                <colgroup><col style="width:7%"><col style="width:3.4%"><col style="width:3.4%"><col style="width:3.4%"><col style="width:3.4%">
+                <col style="width:3.4%"><col style="width:3.4%"><col style="width:3.4%"><col style="width:3.4%"><col style="width:3.4%">
+                <col style="width:3.4%"><col style="width:3.4%"><col style="width:3.4%"><col style="width:3.4%"><col style="width:3.4%">
+                <col style="width:3.4%"><col style="width:3.4%"><col style="width:3.4%"><col style="width:3.4%"><col style="width:3.4%">
+                <col style="width:3.4%"><col style="width:3.4%"><col style="width:3.4%"><col style="width:3.4%"><col style="width:3.4%"><col style="width:3.4%"></colgroup>
+                <thead><tr><th rowspan="3">الإدارة</th><th colspan="8">عدد المفحوصين</th><th colspan="16">ايجابى بلهارسيا</th><th colspan="2">ايجابى فاشيولا</th></tr>
+                <tr><th colspan="4">مصرى</th><th colspan="4">غير مصرى</th><th colspan="8">مصرى</th><th colspan="8">غير مصرى</th><th>ذكر</th><th>أنثى</th></tr>
+                <tr><th>أنثى ≥12</th><th>أنثى >12</th><th>ذكر ≥12</th><th>ذكر >12</th><th>أنثى ≥12</th><th>أنثى >12</th><th>ذكر ≥12</th><th>ذكر >12</th>
+                <th>بولية أنثى ≥12</th><th>بولية أنثى >12</th><th>بولية ذكر ≥12</th><th>بولية ذكر >12</th><th>معوية أنثى ≥12</th><th>معوية أنثى >12</th><th>معوية ذكر ≥12</th><th>معوية ذكر >12</th>
+                <th>بولية أجنبى أنثى ≥12</th><th>بولية أجنبى أنثى >12</th><th>بولية أجنبى ذكر ≥12</th><th>بولية أجنبى ذكر >12</th><th>معوية أجنبى أنثى ≥12</th><th>معوية أجنبى أنثى >12</th><th>معوية أجنبى ذكر ≥12</th><th>معوية أجنبى ذكر >12</th>
+                <th>فاشيولا (ذكر)</th><th>فاشيولا (أنثى)</th></tr></thead>
+                <tbody>
+                    <tr><td class="subgroup">العيادة الخارجيه</td>
+                    <td><input type="number" class="table-input out-egy-f-g12"></td><td><input type="number" class="table-input out-egy-f-a12"></td><td><input type="number" class="table-input out-egy-m-g12"></td><td><input type="number" class="table-input out-egy-m-a12"></td>
+                    <td><input type="number" class="table-input out-non-f-g12"></td><td><input type="number" class="table-input out-non-f-a12"></td><td><input type="number" class="table-input out-non-m-g12"></td><td><input type="number" class="table-input out-non-m-a12"></td>
+                    <td><input type="number" class="table-input out-pos-ur-ef-g12"></td><td><input type="number" class="table-input out-pos-ur-ef-a12"></td><td><input type="number" class="table-input out-pos-ur-em-g12"></td><td><input type="number" class="table-input out-pos-ur-em-a12"></td>
+                    <td><input type="number" class="table-input out-pos-int-ef-g12"></td><td><input type="number" class="table-input out-pos-int-ef-a12"></td><td><input type="number" class="table-input out-pos-int-em-g12"></td><td><input type="number" class="table-input out-pos-int-em-a12"></td>
+                    <td><input type="number" class="table-input out-pos-ur-nf-g12"></td><td><input type="number" class="table-input out-pos-ur-nf-a12"></td><td><input type="number" class="table-input out-pos-ur-nm-g12"></td><td><input type="number" class="table-input out-pos-ur-nm-a12"></td>
+                    <td><input type="number" class="table-input out-pos-int-nf-g12"></td><td><input type="number" class="table-input out-pos-int-nf-a12"></td><td><input type="number" class="table-input out-pos-int-nm-g12"></td><td><input type="number" class="table-input out-pos-int-nm-a12"></td>
+                    <td><input type="number" class="table-input out-fash-m"></td><td><input type="number" class="table-input out-fash-f"></td>
+                    </tr>
+                    <tr><td class="subgroup">عينة عشوائية</td>
+                    <td><input type="number" class="table-input rand-egy-f-g12"></td><td><input type="number" class="table-input rand-egy-f-a12"></td><td><input type="number" class="table-input rand-egy-m-g12"></td><td><input type="number" class="table-input rand-egy-m-a12"></td>
+                    <td><input type="number" class="table-input rand-non-f-g12"></td><td><input type="number" class="table-input rand-non-f-a12"></td><td><input type="number" class="table-input rand-non-m-g12"></td><td><input type="number" class="table-input rand-non-m-a12"></td>
+                    <td><input type="number" class="table-input rand-pos-ur-ef-g12"></td><td><input type="number" class="table-input rand-pos-ur-ef-a12"></td><td><input type="number" class="table-input rand-pos-ur-em-g12"></td><td><input type="number" class="table-input rand-pos-ur-em-a12"></td>
+                    <td><input type="number" class="table-input rand-pos-int-ef-g12"></td><td><input type="number" class="table-input rand-pos-int-ef-a12"></td><td><input type="number" class="table-input rand-pos-int-em-g12"></td><td><input type="number" class="table-input rand-pos-int-em-a12"></td>
+                    <td><input type="number" class="table-input rand-pos-ur-nf-g12"></td><td><input type="number" class="table-input rand-pos-ur-nf-a12"></td><td><input type="number" class="table-input rand-pos-ur-nm-g12"></td><td><input type="number" class="table-input rand-pos-ur-nm-a12"></td>
+                    <td><input type="number" class="table-input rand-pos-int-nf-g12"></td><td><input type="number" class="table-input rand-pos-int-nf-a12"></td><td><input type="number" class="table-input rand-pos-int-nm-g12"></td><td><input type="number" class="table-input rand-pos-int-nm-a12"></td>
+                    <td><input type="number" class="table-input rand-fash-m"></td><td><input type="number" class="table-input rand-fash-f"></td>
+                    </tr>
+                    <tr class="schools-row"><td class="subgroup">المدارس</td>
+                    <td><input type="number" class="table-input school-egy-f-g12"></td><td><input type="number" class="table-input school-egy-f-a12"></td><td><input type="number" class="table-input school-egy-m-g12"></td><td><input type="number" class="table-input school-egy-m-a12"></td>
+                    <td><input type="number" class="table-input school-non-f-g12"></td><td><input type="number" class="table-input school-non-f-a12"></td><td><input type="number" class="table-input school-non-m-g12"></td><td><input type="number" class="table-input school-non-m-a12"></td>
+                    <td><input type="number" class="table-input school-pos-ur-ef-g12"></td><td><input type="number" class="table-input school-pos-ur-ef-a12"></td><td><input type="number" class="table-input school-pos-ur-em-g12"></td><td><input type="number" class="table-input school-pos-ur-em-a12"></td>
+                    <td><input type="number" class="table-input school-pos-int-ef-g12"></td><td><input type="number" class="table-input school-pos-int-ef-a12"></td><td><input type="number" class="table-input school-pos-int-em-g12"></td><td><input type="number" class="table-input school-pos-int-em-a12"></td>
+                    <td><input type="number" class="table-input school-pos-ur-nf-g12"></td><td><input type="number" class="table-input school-pos-ur-nf-a12"></td><td><input type="number" class="table-input school-pos-ur-nm-g12"></td><td><input type="number" class="table-input school-pos-ur-nm-a12"></td>
+                    <td><input type="number" class="table-input school-pos-int-nf-g12"></td><td><input type="number" class="table-input school-pos-int-nf-a12"></td><td><input type="number" class="table-input school-pos-int-nm-g12"></td><td><input type="number" class="table-input school-pos-int-nm-a12"></td>
+                    <td><input type="number" class="table-input school-fash-m"></td><td><input type="number" class="table-input school-fash-f"></td>
+                    </tr>
+                    <tr class="totals-row"><td class="subgroup">الاجمالى</td>
+                    <td id="sum1">0</td><td id="sum2">0</td><td id="sum3">0</td><td id="sum4">0</td><td id="sum5">0</td><td id="sum6">0</td><td id="sum7">0</td><td id="sum8">0</td>
+                    <td id="sum9">0</td><td id="sum10">0</td><td id="sum11">0</td><td id="sum12">0</td><td id="sum13">0</td><td id="sum14">0</td><td id="sum15">0</td><td id="sum16">0</td>
+                    <td id="sum17">0</td><td id="sum18">0</td><td id="sum19">0</td><td id="sum20">0</td><td id="sum21">0</td><td id="sum22">0</td><td id="sum23">0</td><td id="sum24">0</td>
+                    <td id="sum25">0</td><td id="sum26">0</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="nationalities-wrapper"><div class="nationalities-table">
+            <table><thead><tr><th colspan="5">إجمالي المفحوصين* (غير المصريين)</th><th colspan="5">إجمالي إيجابى البلهارسيا*</th><th colspan="5">إجمالي إيجابى الفاشيولا*</th></tr>
+            <tr><th>سورى</th><th>عراقى</th><th>سودانى</th><th>ليبى</th><th>يمنى</th><th>سورى</th><th>عراقى</th><th>سودانى</th><th>ليبى</th><th>يمنى</th><th>سورى</th><th>عراقى</th><th>سودانى</th><th>ليبى</th><th>يمنى</th></tr></thead>
+            <tbody><tr>
+                <td><input type="number" class="table-input" id="totalSyrian"></td><td><input type="number" class="table-input" id="totalIraqi"></td><td><input type="number" class="table-input" id="totalSudani"></td><td><input type="number" class="table-input" id="totalLibyan"></td><td><input type="number" class="table-input" id="totalYemeni"></td>
+                <td><input type="number" class="table-input" id="posSyrian"></td><td><input type="number" class="table-input" id="posIraqi"></td><td><input type="number" class="table-input" id="posSudani"></td><td><input type="number" class="table-input" id="posLibyan"></td><td><input type="number" class="table-input" id="posYemeni"></td>
+                <td><input type="number" class="table-input" id="fashSyrian"></td><td><input type="number" class="table-input" id="fashIraqi"></td><td><input type="number" class="table-input" id="fashSudani"></td><td><input type="number" class="table-input" id="fashLibyan"></td><td><input type="number" class="table-input" id="fashYemeni"></td>
+            </tr></tbody>
+        </table>
+        </div></div>
+
+        <div class="footer-note"><div class="signature-left"><div>فنى المعمل</div><div><strong>محمود عبده الجمال</strong></div><div><strong>ساره عبدالحميد جابر</strong></div></div><div class="signature-right"><div>مدير الوحدة</div><div>_________________</div></div></div>
+    </div>
+</div>
+
+<script>
+    let reportsDB = JSON.parse(localStorage.getItem('bilharzia_reports')) || [];
+    let autoWeek = true;
+
+    function showMsg(msg, isError) {
+        let errDiv = document.getElementById('errorMsg'), sucDiv = document.getElementById('successMsg');
+        if (isError) { errDiv.innerText = msg; errDiv.style.display = 'block'; setTimeout(()=>errDiv.style.display='none', 3000); }
+        else { sucDiv.innerText = msg; sucDiv.style.display = 'block'; setTimeout(()=>sucDiv.style.display='none', 3000); }
+    }
+
+    function getISOWeekNumber(d) {
+        let date = new Date(d); date.setHours(0,0,0,0);
+        date.setDate(date.getDate() + 3 - (date.getDay() + 6) % 7);
+        let week1 = new Date(date.getFullYear(), 0, 4);
+        return 1 + Math.round(((date - week1) / 86400000 - 3 + (week1.getDay() + 6) % 7) / 7);
+    }
+
+    function updateWeekAuto() {
+        if (!autoWeek) return;
+        let date = document.getElementById('endDate').value;
+        if (date) document.getElementById('customWeekNumber').value = getISOWeekNumber(new Date(date + 'T12:00:00'));
+    }
+
+    function updateTitle() {
+        let date = document.getElementById('endDate').value, dayIdx = parseInt(document.getElementById('endDaySelect').value);
+        let days = ['الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
+        let d = new Date(date + 'T12:00:00');
+        let formatted = d.toLocaleDateString('ar-EG', { year:'numeric', month:'2-digit', day:'2-digit' }).replace(/\//g,'/');
+        let week = document.getElementById('customWeekNumber').value;
+        document.getElementById('dynamicDateWeek').innerHTML = `المنتهى يوم ${days[dayIdx]} الموافق ${formatted} - الأسبوع الدولى رقم (${week}) - محافظة كفرالشيخ`;
+        document.getElementById('reportMainTitle').innerHTML = 'البلاغ الاسبوعي للإصابة بالبلهارسيا والفاشيولا عن وحدة الجزيرة الخضراء';
+    }
+
+    function updateTotals() {
+        let classMap = [
+            ['.out-egy-f-g12','.rand-egy-f-g12','.school-egy-f-g12'], ['.out-egy-f-a12','.rand-egy-f-a12','.school-egy-f-a12'],
+            ['.out-egy-m-g12','.rand-egy-m-g12','.school-egy-m-g12'], ['.out-egy-m-a12','.rand-egy-m-a12','.school-egy-m-a12'],
+            ['.out-non-f-g12','.rand-non-f-g12','.school-non-f-g12'], ['.out-non-f-a12','.rand-non-f-a12','.school-non-f-a12'],
+            ['.out-non-m-g12','.rand-non-m-g12','.school-non-m-g12'], ['.out-non-m-a12','.rand-non-m-a12','.school-non-m-a12'],
+            ['.out-pos-ur-ef-g12','.rand-pos-ur-ef-g12','.school-pos-ur-ef-g12'], ['.out-pos-ur-ef-a12','.rand-pos-ur-ef-a12','.school-pos-ur-ef-a12'],
+            ['.out-pos-ur-em-g12','.rand-pos-ur-em-g12','.school-pos-ur-em-g12'], ['.out-pos-ur-em-a12','.rand-pos-ur-em-a12','.school-pos-ur-em-a12'],
+            ['.out-pos-int-ef-g12','.rand-pos-int-ef-g12','.school-pos-int-ef-g12'], ['.out-pos-int-ef-a12','.rand-pos-int-ef-a12','.school-pos-int-ef-a12'],
+            ['.out-pos-int-em-g12','.rand-pos-int-em-g12','.school-pos-int-em-g12'], ['.out-pos-int-em-a12','.rand-pos-int-em-a12','.school-pos-int-em-a12'],
+            ['.out-pos-ur-nf-g12','.rand-pos-ur-nf-g12','.school-pos-ur-nf-g12'], ['.out-pos-ur-nf-a12','.rand-pos-ur-nf-a12','.school-pos-ur-nf-a12'],
+            ['.out-pos-ur-nm-g12','.rand-pos-ur-nm-g12','.school-pos-ur-nm-g12'], ['.out-pos-ur-nm-a12','.rand-pos-ur-nm-a12','.school-pos-ur-nm-a12'],
+            ['.out-pos-int-nf-g12','.rand-pos-int-nf-g12','.school-pos-int-nf-g12'], ['.out-pos-int-nf-a12','.rand-pos-int-nf-a12','.school-pos-int-nf-a12'],
+            ['.out-pos-int-nm-g12','.rand-pos-int-nm-g12','.school-pos-int-nm-g12'], ['.out-pos-int-nm-a12','.rand-pos-int-nm-a12','.school-pos-int-nm-a12'],
+            ['.out-fash-m','.rand-fash-m','.school-fash-m'], ['.out-fash-f','.rand-fash-f','.school-fash-f']
+        ];
+        for (let i=0; i<26; i++) {
+            let total = 0;
+            for (let sel of classMap[i]) document.querySelectorAll(sel).forEach(el => { let v = parseInt(el.value); if (!isNaN(v)) total += v; });
+            document.getElementById(`sum${i+1}`).innerText = total;
+        }
+    }
+
+    function collectData() {
+        let inputs = document.querySelectorAll('input.table-input');
+        let data = {};
+        inputs.forEach((inp, idx) => { data[`field_${idx}`] = inp.value; });
+        data.savedDate = document.getElementById('endDate').value;
+        data.savedDay = document.getElementById('endDaySelect').value;
+        data.savedWeek = document.getElementById('customWeekNumber').value;
+        return data;
+    }
+
+    function loadData(data) {
+        let inputs = document.querySelectorAll('input.table-input');
+        inputs.forEach((inp, idx) => { if (data[`field_${idx}`] !== undefined) inp.value = data[`field_${idx}`]; });
+        if (data.savedDate) document.getElementById('endDate').value = data.savedDate;
+        if (data.savedDay) document.getElementById('endDaySelect').value = data.savedDay;
+        if (data.savedWeek) { document.getElementById('customWeekNumber').value = data.savedWeek; autoWeek = false; }
+        else autoWeek = true;
+        updateTotals();
+        updateTitle();
+    }
+
+    function saveReport() {
+        try {
+            let date = document.getElementById('endDate').value;
+            if (!date) { showMsg('يرجى اختيار التاريخ', true); return; }
+            let day = document.getElementById('endDaySelect').value;
+            let week = document.getElementById('customWeekNumber').value;
+            let dayName = ['الأحد','الإثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'][parseInt(day)];
+            let name = `${date} - ${dayName} - أسبوع ${week}`;
+            let reportData = collectData();
+            reportData.id = Date.now();
+            reportData.name = name;
+            reportsDB.unshift(reportData);
+            if (reportsDB.length > 100) reportsDB.pop();
+            localStorage.setItem('bilharzia_reports', JSON.stringify(reportsDB));
+            showMsg('تم حفظ التقرير بنجاح!', false);
+            updateMonthFilter();
+            displayReports();
+        } catch(e) { showMsg('خطأ في الحفظ: '+e.message, true); }
+    }
+
+    function deleteReport(id) {
+        reportsDB = reportsDB.filter(r => r.id !== id);
+        localStorage.setItem('bilharzia_reports', JSON.stringify(reportsDB));
+        updateMonthFilter();
+        displayReports();
+        showMsg('تم حذف التقرير', false);
+    }
+
+    function loadReport(id) {
+        let report = reportsDB.find(r => r.id === id);
+        if (report) { loadData(report); showMsg('تم تحميل التقرير', false); }
+    }
+
+    function updateMonthFilter() {
+        let months = [...new Set(reportsDB.map(r => r.savedDate?.substring(0,7)).filter(Boolean))].sort().reverse();
+        let select = document.getElementById('monthFilter');
+        let cur = select.value;
+        select.innerHTML = '<option value="all">كل الشهور</option>';
+        months.forEach(m => { let name = new Date(m+'-01').toLocaleDateString('ar-EG',{year:'numeric',month:'long'}); select.innerHTML += `<option value="${m}">${name}</option>`; });
+        if (months.includes(cur)) select.value = cur;
+        else select.value = 'all';
+    }
+
+    function displayReports() {
+        let month = document.getElementById('monthFilter').value;
+        let search = document.getElementById('searchReports').value.toLowerCase();
+        let filtered = reportsDB.filter(r => {
+            if (month !== 'all' && (!r.savedDate || !r.savedDate.startsWith(month))) return false;
+            if (search && !r.name.toLowerCase().includes(search)) return false;
+            return true;
+        });
+        let container = document.getElementById('reportsList');
+        if (!filtered.length) { container.innerHTML = '<div style="color:#888;text-align:center;">لا توجد تقارير</div>'; document.getElementById('monthlyStats').style.display='none'; return; }
+        container.innerHTML = filtered.map(r => `<div class="report-item" data-id="${r.id}">
+            <span class="report-date">📄 ${r.name}</span>
+            <div class="report-actions"><button class="load-btn" data-id="${r.id}">تحميل</button><button class="del-btn" data-id="${r.id}">حذف</button></div>
+        </div>`).join('');
+        document.querySelectorAll('.load-btn').forEach(btn => btn.addEventListener('click', (e) => { e.stopPropagation(); loadReport(parseInt(btn.dataset.id)); }));
+        document.querySelectorAll('.del-btn').forEach(btn => btn.addEventListener('click', (e) => { e.stopPropagation(); deleteReport(parseInt(btn.dataset.id)); }));
+        document.querySelectorAll('.report-item').forEach(item => item.addEventListener('click', () => loadReport(parseInt(item.dataset.id))));
+        if (month !== 'all') {
+            let reportsInMonth = reportsDB.filter(r => r.savedDate && r.savedDate.startsWith(month));
+            let totals = { exam:0, pos:0, fash:0 };
+            reportsInMonth.forEach(r => { for(let i=0;i<26;i++) { let v=parseInt(r[`field_${i}`]); if(!isNaN(v)) { if(i<8) totals.exam+=v; else if(i<24) totals.pos+=v; else totals.fash+=v; } } });
+            let monthName = new Date(month+'-01').toLocaleDateString('ar-EG',{year:'numeric',month:'long'});
+            document.getElementById('monthlyStats').innerHTML = `📊 إجماليات شهر ${monthName}: ${reportsInMonth.length} تقرير | المفحوصين: ${totals.exam} | الإيجابى: ${totals.pos} | الفاشيولا: ${totals.fash}`;
+            document.getElementById('monthlyStats').style.display = 'block';
+        } else document.getElementById('monthlyStats').style.display = 'none';
+    }
+
+    function getFormattedDateForFilename() {
+        let date = document.getElementById('endDate').value;
+        if (!date) return 'report';
+        let d = new Date(date + 'T12:00:00');
+        return d.toLocaleDateString('ar-EG', { year:'numeric', month:'2-digit', day:'2-digit' }).replace(/\//g, '-');
+    }
+
+    function exportPDF() {
+        updateTotals(); updateTitle();
+        let element = document.getElementById('pdfContent');
+        let dateStr = getFormattedDateForFilename();
+        let filename = `البلاغ_الاسبوعي_للبلهارسيا_والفاشيولا_وحدة_الجزيرة_الخضراء_${dateStr}.pdf`;
+        html2pdf().set({ margin: [0.2,0.2,0.2,0.2], filename: filename, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2 }, jsPDF: { unit: 'in', format: 'a3', orientation: 'landscape' } }).from(element).save().then(()=>showMsg('تم استخراج PDF بنجاح', false)).catch(e=>showMsg('خطأ في PDF: '+e.message, true));
+    }
+
+    function resetAll() { document.querySelectorAll('input.table-input').forEach(i => i.value = ''); updateTotals(); showMsg('تم مسح جميع الحقول', false); }
+
+    function changeWeek(delta) {
+        let input = document.getElementById('customWeekNumber');
+        let val = parseInt(input.value);
+        if (isNaN(val)) val = 21;
+        let newVal = val + delta;
+        if (newVal < 1) newVal = 1;
+        if (newVal > 53) newVal = 53;
+        input.value = newVal;
+        autoWeek = false;
+        updateTitle();
+    }
+
+    document.getElementById('saveReportBtn').addEventListener('click', saveReport);
+    document.getElementById('generatePdfBtn').addEventListener('click', exportPDF);
+    document.getElementById('resetDefaultBtn').addEventListener('click', resetAll);
+    document.getElementById('endDate').addEventListener('change', () => { if(autoWeek) updateWeekAuto(); updateTitle(); });
+    document.getElementById('endDaySelect').addEventListener('change', updateTitle);
+    document.getElementById('customWeekNumber').addEventListener('input', () => { autoWeek = false; updateTitle(); });
+    document.getElementById('autoWeekBtn').addEventListener('click', () => { autoWeek = true; updateWeekAuto(); updateTitle(); });
+    document.getElementById('weekUpBtn').addEventListener('click', () => changeWeek(1));
+    document.getElementById('weekDownBtn').addEventListener('click', () => changeWeek(-1));
+    document.getElementById('searchReports').addEventListener('input', displayReports);
+    document.getElementById('monthFilter').addEventListener('change', displayReports);
+    document.getElementById('clearSearchBtn').addEventListener('click', () => { document.getElementById('searchReports').value=''; displayReports(); });
+    document.querySelectorAll('.table-input').forEach(inp => inp.addEventListener('input', updateTotals));
+
+    (function init() {
+        document.getElementById('endDate').value = '2026-05-24';
+        document.getElementById('endDaySelect').value = '6';
+        autoWeek = true; updateWeekAuto(); updateTitle(); updateTotals();
+        updateMonthFilter(); displayReports();
+    })();
+</script>
+</body>
+</html>
