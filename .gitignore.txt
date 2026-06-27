@@ -1,0 +1,15 @@
+# Windows
+Thumbs.db
+Desktop.ini
+
+# Mac
+.DS_Store
+
+# IDE (برامج التطوير)
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs (ملفات السجلات)
+*.log
