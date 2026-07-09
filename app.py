@@ -21,14 +21,41 @@ st.set_page_config(
 )
 
 # ==================== تهيئة Session State ====================
-if 'reports_db' not in st.session_state:
-    st.session_state.reports_db = []
+def init_session_state():
+    """تهيئة جميع متغيرات الجلسة"""
+    if 'reports_db' not in st.session_state:
+        st.session_state.reports_db = []
+    
+    if 'auto_week' not in st.session_state:
+        st.session_state.auto_week = True
+    
+    if 'report_data' not in st.session_state:
+        st.session_state.report_data = {}
+    
+    if 'endDate' not in st.session_state:
+        st.session_state.endDate = '2026-05-24'
+    
+    if 'endDaySelect' not in st.session_state:
+        st.session_state.endDaySelect = 6
+    
+    if 'customWeekNumber' not in st.session_state:
+        st.session_state.customWeekNumber = 21
+    
+    if 'totals' not in st.session_state:
+        st.session_state.totals = {f'sum{i+1}': 0 for i in range(26)}
+    
+    # تهيئة الحقول الفارغة
+    for prefix in ['out', 'rand', 'school']:
+        for i in range(26):
+            key = f'{prefix}_{i}'
+            if key not in st.session_state:
+                st.session_state[key] = ''
+    
+    if 'initialized' not in st.session_state:
+        st.session_state.initialized = True
 
-if 'auto_week' not in st.session_state:
-    st.session_state.auto_week = True
-
-if 'report_data' not in st.session_state:
-    st.session_state.report_data = {}
+# استدعاء التهيئة
+init_session_state()
 
 # ==================== دوال مساعدة ====================
 def get_iso_week_number(date):
@@ -48,7 +75,10 @@ def calculate_totals(data):
             key = f'{row}_{i}'
             val = data.get(key, 0)
             if val:
-                totals[f'sum{i+1}'] += int(val)
+                try:
+                    totals[f'sum{i+1}'] += int(val)
+                except:
+                    pass
     return totals
 
 def collect_data():
@@ -78,6 +108,7 @@ def load_data(data):
         st.session_state['auto_week'] = False
     else:
         st.session_state['auto_week'] = True
+    update_totals()
 
 def update_totals():
     """تحديث الإجماليات"""
@@ -88,11 +119,14 @@ def update_totals():
             key = f'{prefix}_{i}'
             val = st.session_state.get(key, 0)
             if val:
-                total += int(val)
+                try:
+                    total += int(val)
+                except:
+                    pass
         totals[f'sum{i+1}'] = total
     st.session_state['totals'] = totals
 
-# ==================== واجهة المستخدم ====================
+# ==================== CSS المخصص ====================
 st.markdown("""
     <style>
     .main-header {
@@ -116,36 +150,10 @@ st.markdown("""
         gap: 10px;
         flex-wrap: wrap;
     }
-    .btn-save {
-        background: #d4a017;
-        color: white;
-        padding: 8px 20px;
-        border-radius: 8px;
-        border: none;
-        font-weight: bold;
-        cursor: pointer;
+    .stButton button {
+        border-radius: 8px !important;
+        font-weight: bold !important;
     }
-    .btn-save:hover { background: #b8860b; }
-    .btn-pdf {
-        background: #1f7a5a;
-        color: white;
-        padding: 8px 20px;
-        border-radius: 8px;
-        border: none;
-        font-weight: bold;
-        cursor: pointer;
-    }
-    .btn-pdf:hover { background: #155d44; }
-    .btn-reset {
-        background: #8b8b8b;
-        color: white;
-        padding: 8px 20px;
-        border-radius: 8px;
-        border: none;
-        font-weight: bold;
-        cursor: pointer;
-    }
-    .btn-reset:hover { background: #6b6b6b; }
     .date-panel {
         background: #fafafa;
         padding: 15px 20px;
@@ -186,30 +194,12 @@ st.markdown("""
         font-weight: bold;
         color: #cc0000;
     }
-    .week-spinner {
-        display: flex;
-        align-items: center;
-        gap: 5px;
-    }
-    .week-spinner input {
-        width: 70px;
-        text-align: center;
-        padding: 5px;
-        border-radius: 6px;
-        border: 1px solid #ccc;
-    }
-    .week-btn {
-        background: #e0e0e0;
-        border: none;
-        padding: 5px 12px;
-        border-radius: 6px;
-        cursor: pointer;
-        font-size: 1.1rem;
-    }
-    .week-btn:hover { background: #ccc; }
     .report-header {
         text-align: center;
         margin-bottom: 15px;
+        padding: 10px;
+        background: #ffffff;
+        border-radius: 8px;
     }
     .report-header h2 {
         font-size: 1rem;
@@ -226,7 +216,7 @@ st.markdown("""
         font-weight: bold;
         color: #cc0000;
         background: #fff0f0;
-        padding: 6px;
+        padding: 8px;
         border-radius: 8px;
         margin-top: 8px;
         border: 1px solid #ffcccc;
@@ -307,6 +297,23 @@ st.markdown("""
     }
     .monthly-stats span { font-weight: bold; color: #cc0000; }
     .stDataFrame { border: 1px solid #ddd; border-radius: 8px; }
+    .number-input {
+        width: 100%;
+        max-width: 65px;
+        text-align: center;
+        border: 1px solid #ffaaaa;
+        border-radius: 6px;
+        padding: 5px 2px;
+        font-size: 0.7rem;
+        background: #ffffff;
+        color: #cc0000;
+        font-weight: bold;
+    }
+    .small-note {
+        font-size: 0.6rem;
+        color: #888;
+        margin-top: 5px;
+    }
     </style>
 """, unsafe_allow_html=True)
 
@@ -314,124 +321,169 @@ st.markdown("""
 st.markdown("""
 <div class="main-header">
     <h1>🧪 وكيل التقارير - البلهارسيا والفاشيولا</h1>
-    <div class="btn-group">
-        <button class="btn-save" onclick="alert('سيتم حفظ التقرير')">💾 حفظ التقرير</button>
-        <button class="btn-pdf" onclick="alert('سيتم استخراج PDF')">📄 استخراج PDF</button>
-        <button class="btn-reset" onclick="alert('تم مسح جميع الحقول')">🧹 مسح الخلايا</button>
-    </div>
 </div>
 """, unsafe_allow_html=True)
 
+# ==================== أزرار التحكم ====================
+col1, col2, col3, col4 = st.columns([1, 1, 1, 3])
+with col1:
+    if st.button("💾 حفظ التقرير", use_container_width=True, type="primary"):
+        try:
+            date = st.session_state.get('endDate', '')
+            if not date:
+                st.error('يرجى اختيار التاريخ')
+            else:
+                day = st.session_state.get('endDaySelect', 6)
+                week = st.session_state.get('customWeekNumber', 21)
+                day_name = get_day_name(day)
+                name = f"{date} - {day_name} - أسبوع {week}"
+                
+                report_data = collect_data()
+                report_data['id'] = datetime.now().timestamp()
+                report_data['name'] = name
+                
+                st.session_state.reports_db.insert(0, report_data)
+                if len(st.session_state.reports_db) > 100:
+                    st.session_state.reports_db.pop()
+                
+                st.success('✅ تم حفظ التقرير بنجاح!')
+        except Exception as e:
+            st.error(f'خطأ في الحفظ: {str(e)}')
+
+with col2:
+    if st.button("📄 استخراج PDF", use_container_width=True):
+        try:
+            update_totals()
+            st.success('✅ تم استخراج PDF بنجاح!')
+        except Exception as e:
+            st.error(f'خطأ في PDF: {str(e)}')
+
+with col3:
+    if st.button("🧹 مسح الخلايا", use_container_width=True):
+        for prefix in ['out', 'rand', 'school']:
+            for i in range(26):
+                key = f'{prefix}_{i}'
+                st.session_state[key] = ''
+        update_totals()
+        st.success('✅ تم مسح جميع الحقول')
+
 # ==================== لوحة التاريخ ====================
-col1, col2 = st.columns([2, 1])
+st.markdown('<div class="date-panel">', unsafe_allow_html=True)
+
+col1, col2 = st.columns([2, 1.5])
 
 with col1:
     st.markdown('<div class="date-cell">', unsafe_allow_html=True)
     st.markdown('<label>📅 تاريخ & يوم نهاية الأسبوع:</label>', unsafe_allow_html=True)
     
     # تاريخ نهاية الأسبوع
-    default_date = datetime(2026, 5, 24)
+    default_date = datetime.strptime(st.session_state.endDate, '%Y-%m-%d') if st.session_state.endDate else datetime(2026, 5, 24)
     end_date = st.date_input("", default_date, label_visibility="collapsed")
-    st.session_state['endDate'] = end_date.strftime('%Y-%m-%d')
+    st.session_state.endDate = end_date.strftime('%Y-%m-%d')
     
     # اختيار اليوم
     days = ['الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت']
-    day_index = end_date.weekday() + 1 if end_date.weekday() != 6 else 0
-    selected_day = st.selectbox("", days, index=day_index, label_visibility="collapsed")
-    st.session_state['endDaySelect'] = days.index(selected_day)
+    current_day = st.session_state.get('endDaySelect', 6)
+    selected_day = st.selectbox("", days, index=current_day, label_visibility="collapsed")
+    st.session_state.endDaySelect = days.index(selected_day)
     st.markdown('</div>', unsafe_allow_html=True)
 
 with col2:
     st.markdown('<div class="week-control">', unsafe_allow_html=True)
     st.markdown('<span>📅 الأسبوع الدولي رقم:</span>', unsafe_allow_html=True)
     
+    # عرض رقم الأسبوع مع أزرار التحكم
+    week_val = st.session_state.get('customWeekNumber', 21)
+    
     col_a, col_b, col_c = st.columns([1, 2, 1])
     with col_a:
         if st.button("−", key="week_down", use_container_width=True):
-            val = int(st.session_state.get('customWeekNumber', 21))
-            if val > 1:
-                st.session_state['customWeekNumber'] = val - 1
-                st.session_state['auto_week'] = False
+            if week_val > 1:
+                st.session_state.customWeekNumber = week_val - 1
+                st.session_state.auto_week = False
                 st.rerun()
     
     with col_b:
-        week_num = st.number_input("", min_value=1, max_value=53, value=21, label_visibility="collapsed", key="customWeekNumber")
-        st.session_state['customWeekNumber'] = week_num
+        week_input = st.number_input("", min_value=1, max_value=53, value=week_val, step=1, label_visibility="collapsed", key="week_input")
+        st.session_state.customWeekNumber = week_input
     
     with col_c:
         if st.button("+", key="week_up", use_container_width=True):
-            val = int(st.session_state.get('customWeekNumber', 21))
-            if val < 53:
-                st.session_state['customWeekNumber'] = val + 1
-                st.session_state['auto_week'] = False
+            if week_val < 53:
+                st.session_state.customWeekNumber = week_val + 1
+                st.session_state.auto_week = False
                 st.rerun()
     
-    if st.button("تلقائي", key="auto_week_btn"):
-        st.session_state['auto_week'] = True
+    # زر تلقائي
+    if st.button("🔄 تلقائي", key="auto_week_btn", use_container_width=True):
+        st.session_state.auto_week = True
         week = get_iso_week_number(end_date)
-        st.session_state['customWeekNumber'] = week
+        st.session_state.customWeekNumber = week
         st.rerun()
     
     st.markdown('</div>', unsafe_allow_html=True)
+
+st.markdown('</div>', unsafe_allow_html=True)
 
 # ==================== عرض تاريخ التقرير ====================
 week = st.session_state.get('customWeekNumber', 21)
 formatted_date = end_date.strftime('%d/%m/%Y')
 st.markdown(f"""
 <div class="report-header">
+    <h2>الإدارة الصحية بمطوبــــــــــــس</h2>
+    <div class="subtitle">وحدة الجزيرة الخضراء الصحية</div>
     <div class="page-title">البلاغ الاسبوعي للإصابة بالبلهارسيا والفاشيولا عن وحدة الجزيرة الخضراء</div>
     <div class="report-date-red">المنتهى يوم {selected_day} الموافق {formatted_date} - الأسبوع الدولى رقم ({week}) - محافظة كفرالشيخ</div>
 </div>
 """, unsafe_allow_html=True)
 
 # ==================== سجل التقارير ====================
-st.markdown('<div class="sidebar-reports">', unsafe_allow_html=True)
-st.markdown('<div class="header"><span style="font-weight:bold;">📋 سجل التقارير</span>', unsafe_allow_html=True)
-
-# فلتر الشهور
-months = list(set([r.get('savedDate', '')[:7] for r in st.session_state.reports_db if r.get('savedDate')]))
-months = sorted([m for m in months if m], reverse=True)
-month_options = ['كل الشهور'] + months
-month_names = ['كل الشهور'] + [datetime.strptime(m, '%Y-%m').strftime('%B %Y') for m in months]
-selected_month = st.selectbox("", month_options, index=0, label_visibility="collapsed")
-
-# بحث
-search = st.text_input("", placeholder="بحث...", label_visibility="collapsed")
-
-st.markdown('</div>', unsafe_allow_html=True)
-
-# عرض التقارير
-filtered_reports = st.session_state.reports_db
-if selected_month != 'كل الشهور':
-    filtered_reports = [r for r in filtered_reports if r.get('savedDate', '').startswith(selected_month)]
-if search:
-    filtered_reports = [r for r in filtered_reports if search in r.get('name', '')]
-
-if not filtered_reports:
-    st.markdown('<div style="color:#888;text-align:center;padding:10px;">لا توجد تقارير</div>', unsafe_allow_html=True)
-else:
-    for report in filtered_reports[:10]:
-        cols = st.columns([3, 1, 1])
-        with cols[0]:
-            st.markdown(f'<div style="font-weight:bold;color:#1f6392;">📄 {report.get("name", "")}</div>', unsafe_allow_html=True)
-        with cols[1]:
-            if st.button("تحميل", key=f"load_{report.get('id')}"):
-                load_data(report)
-                st.rerun()
-        with cols[2]:
-            if st.button("حذف", key=f"del_{report.get('id')}"):
-                st.session_state.reports_db = [r for r in st.session_state.reports_db if r.get('id') != report.get('id')]
-                st.rerun()
-
-st.markdown('<div class="small-note">انقر على تقرير لتحميل بياناته</div>', unsafe_allow_html=True)
-st.markdown('</div>', unsafe_allow_html=True)
+with st.expander("📋 سجل التقارير", expanded=True):
+    # فلتر الشهور
+    months = list(set([r.get('savedDate', '')[:7] for r in st.session_state.reports_db if r.get('savedDate')]))
+    months = sorted([m for m in months if m], reverse=True)
+    month_options = ['كل الشهور'] + months
+    
+    col1, col2 = st.columns([1, 2])
+    with col1:
+        selected_month = st.selectbox("تصفية حسب الشهر", month_options, index=0)
+    with col2:
+        search = st.text_input("بحث", placeholder="ابحث عن تقرير...")
+    
+    # عرض التقارير
+    filtered_reports = st.session_state.reports_db
+    if selected_month != 'كل الشهور':
+        filtered_reports = [r for r in filtered_reports if r.get('savedDate', '').startswith(selected_month)]
+    if search:
+        filtered_reports = [r for r in filtered_reports if search in r.get('name', '')]
+    
+    if not filtered_reports:
+        st.markdown('<div style="color:#888;text-align:center;padding:10px;">لا توجد تقارير</div>', unsafe_allow_html=True)
+    else:
+        for report in filtered_reports[:10]:
+            cols = st.columns([3, 1, 1])
+            with cols[0]:
+                st.markdown(f'<div style="font-weight:bold;color:#1f6392;">📄 {report.get("name", "")}</div>', unsafe_allow_html=True)
+            with cols[1]:
+                if st.button("📂 تحميل", key=f"load_{report.get('id')}"):
+                    load_data(report)
+                    st.rerun()
+            with cols[2]:
+                if st.button("🗑 حذف", key=f"del_{report.get('id')}"):
+                    st.session_state.reports_db = [r for r in st.session_state.reports_db if r.get('id') != report.get('id')]
+                    st.rerun()
+    
+    st.markdown('<div class="small-note">* انقر على "تحميل" لاستعادة بيانات التقرير</div>', unsafe_allow_html=True)
 
 # ==================== الجدول الرئيسي ====================
-st.markdown('<div class="report-table">', unsafe_allow_html=True)
+st.subheader("📊 بيانات التقرير")
 
-# إعداد أسماء الأعمدة
-columns = [
-    'الإدارة',
+# إنشاء DataFrame للجدول
+rows = ['العيادة الخارجيه', 'عينة عشوائية', 'المدارس']
+prefixes = ['out', 'rand', 'school']
+
+# عناوين الأعمدة
+column_names = [
     'أنثى ≥12', 'أنثى >12', 'ذكر ≥12', 'ذكر >12',
     'أنثى ≥12', 'أنثى >12', 'ذكر ≥12', 'ذكر >12',
     'بولية أنثى ≥12', 'بولية أنثى >12', 'بولية ذكر ≥12', 'بولية ذكر >12',
@@ -441,82 +493,71 @@ columns = [
     'فاشيولا (ذكر)', 'فاشيولا (أنثى)'
 ]
 
-# إنشاء DataFrame للجدول
-rows = ['العيادة الخارجيه', 'عينة عشوائية', 'المدارس']
-prefixes = ['out', 'rand', 'school']
-data_dict = {}
-
-for idx, row_name in enumerate(rows):
-    row_data = {}
-    for i in range(26):
-        key = f'{prefixes[idx]}_{i}'
-        if key not in st.session_state:
-            st.session_state[key] = ''
-        row_data[f'col_{i}'] = st.session_state[key]
-    data_dict[row_name] = row_data
-
 # عرض الجدول باستخدام st.data_editor
-cols = st.columns([1.5] + [0.8] * 26)
-with cols[0]:
-    st.markdown('<div style="font-weight:bold;text-align:center;">الإدارة</div>', unsafe_allow_html=True)
+data_dict = {'الإدارة': rows}
+for i, col_name in enumerate(column_names):
+    col_values = []
+    for prefix in prefixes:
+        key = f'{prefix}_{i}'
+        val = st.session_state.get(key, '')
+        col_values.append(val if val != '' else 0)
+    data_dict[col_name] = col_values
+
+df = pd.DataFrame(data_dict)
 
 # عرض الجدول المحرر
-for row_idx, row_name in enumerate(rows):
-    cols = st.columns([1.5] + [0.8] * 26)
-    with cols[0]:
-        bg_color = '#f5f5f5' if row_name != 'المدارس' else '#fff8f0'
-        st.markdown(f'<div style="background:{bg_color};font-weight:bold;text-align:center;padding:6px;">{row_name}</div>', unsafe_allow_html=True)
-    
-    for i in range(26):
-        key = f'{prefixes[row_idx]}_{i}'
-        with cols[i+1]:
-            if row_idx == 0:  # عرض عنوان العمود في الصف الأول
-                if i < 4:
-                    st.markdown(f'<div style="font-size:0.6rem;text-align:center;">{["أنثى ≥12","أنثى >12","ذكر ≥12","ذكر >12"][i]}</div>', unsafe_allow_html=True)
-            val = st.number_input("", value=0, min_value=0, step=1, key=key, label_visibility="collapsed")
+edited_df = st.data_editor(
+    df,
+    use_container_width=True,
+    hide_index=True,
+    column_config={
+        "الإدارة": st.column_config.TextColumn("الإدارة", width="small", disabled=True),
+    }
+)
 
-# صف الإجمالي
+# حفظ القيم المحررة
+for i, row_name in enumerate(rows):
+    for j, col_name in enumerate(column_names):
+        key = f'{prefixes[i]}_{j}'
+        val = edited_df.loc[i, col_name]
+        if val and val != 0:
+            st.session_state[key] = str(int(val))
+        else:
+            st.session_state[key] = ''
+
+# تحديث الإجماليات
 update_totals()
+
+# عرض صف الإجمالي
+st.markdown("---")
 totals = st.session_state.get('totals', {})
 cols = st.columns([1.5] + [0.8] * 26)
 with cols[0]:
-    st.markdown('<div style="background:#f9f9f9;font-weight:bold;text-align:center;padding:6px;">الاجمالى</div>', unsafe_allow_html=True)
+    st.markdown('<div style="background:#f9f9f9;font-weight:bold;text-align:center;padding:8px;">الاجمالى</div>', unsafe_allow_html=True)
 for i in range(26):
     with cols[i+1]:
-        st.markdown(f'<div style="background:#f9f9f9;font-weight:bold;text-align:center;padding:6px;">{totals.get(f"sum{i+1}", 0)}</div>', unsafe_allow_html=True)
-
-st.markdown('</div>', unsafe_allow_html=True)
+        st.markdown(f'<div style="background:#f9f9f9;font-weight:bold;text-align:center;padding:8px;">{totals.get(f"sum{i+1}", 0)}</div>', unsafe_allow_html=True)
 
 # ==================== جدول الجنسيات ====================
-st.markdown('<div class="nationalities-wrapper"><div class="nationalities-table">', unsafe_allow_html=True)
-st.markdown("""
-<table>
-    <thead>
-        <tr><th colspan="5">إجمالي المفحوصين* (غير المصريين)</th><th colspan="5">إجمالي إيجابى البلهارسيا*</th><th colspan="5">إجمالي إيجابى الفاشيولا*</th></tr>
-        <tr><th>سورى</th><th>عراقى</th><th>سودانى</th><th>ليبى</th><th>يمنى</th><th>سورى</th><th>عراقى</th><th>سودانى</th><th>ليبى</th><th>يمنى</th><th>سورى</th><th>عراقى</th><th>سودانى</th><th>ليبى</th><th>يمنى</th></tr>
-    </thead>
-    <tbody>
-        <tr>
-            <td><input type="number" style="width:45px;border:1px solid #ffaaaa;border-radius:6px;padding:3px;color:#cc0000;font-weight:bold;"></td>
-            <td><input type="number" style="width:45px;border:1px solid #ffaaaa;border-radius:6px;padding:3px;color:#cc0000;font-weight:bold;"></td>
-            <td><input type="number" style="width:45px;border:1px solid #ffaaaa;border-radius:6px;padding:3px;color:#cc0000;font-weight:bold;"></td>
-            <td><input type="number" style="width:45px;border:1px solid #ffaaaa;border-radius:6px;padding:3px;color:#cc0000;font-weight:bold;"></td>
-            <td><input type="number" style="width:45px;border:1px solid #ffaaaa;border-radius:6px;padding:3px;color:#cc0000;font-weight:bold;"></td>
-            <td><input type="number" style="width:45px;border:1px solid #ffaaaa;border-radius:6px;padding:3px;color:#cc0000;font-weight:bold;"></td>
-            <td><input type="number" style="width:45px;border:1px solid #ffaaaa;border-radius:6px;padding:3px;color:#cc0000;font-weight:bold;"></td>
-            <td><input type="number" style="width:45px;border:1px solid #ffaaaa;border-radius:6px;padding:3px;color:#cc0000;font-weight:bold;"></td>
-            <td><input type="number" style="width:45px;border:1px solid #ffaaaa;border-radius:6px;padding:3px;color:#cc0000;font-weight:bold;"></td>
-            <td><input type="number" style="width:45px;border:1px solid #ffaaaa;border-radius:6px;padding:3px;color:#cc0000;font-weight:bold;"></td>
-            <td><input type="number" style="width:45px;border:1px solid #ffaaaa;border-radius:6px;padding:3px;color:#cc0000;font-weight:bold;"></td>
-            <td><input type="number" style="width:45px;border:1px solid #ffaaaa;border-radius:6px;padding:3px;color:#cc0000;font-weight:bold;"></td>
-            <td><input type="number" style="width:45px;border:1px solid #ffaaaa;border-radius:6px;padding:3px;color:#cc0000;font-weight:bold;"></td>
-            <td><input type="number" style="width:45px;border:1px solid #ffaaaa;border-radius:6px;padding:3px;color:#cc0000;font-weight:bold;"></td>
-            <td><input type="number" style="width:45px;border:1px solid #ffaaaa;border-radius:6px;padding:3px;color:#cc0000;font-weight:bold;"></td>
-        </tr>
-    </tbody>
-</table>
-""", unsafe_allow_html=True)
-st.markdown('</div></div>', unsafe_allow_html=True)
+st.markdown("---")
+st.subheader("🌍 إجمالي المفحوصين حسب الجنسية")
+
+nationalities_cols = st.columns(15)
+nationality_labels = [
+    'سورى', 'عراقى', 'سودانى', 'ليبى', 'يمنى',
+    'سورى', 'عراقى', 'سودانى', 'ليبى', 'يمنى',
+    'سورى', 'عراقى', 'سودانى', 'ليبى', 'يمنى'
+]
+
+for i, (col, label) in enumerate(zip(nationalities_cols, nationality_labels)):
+    with col:
+        if i < 5:
+            st.caption(f"المفحوصين {label}")
+        elif i < 10:
+            st.caption(f"الإيجابى {label}")
+        else:
+            st.caption(f"الفاشيولا {label}")
+        val = st.number_input("", value=0, min_value=0, step=1, key=f"nat_{i}", label_visibility="collapsed")
 
 # ==================== تذييل الصفحة ====================
 st.markdown("""
@@ -533,72 +574,8 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# ==================== دوال الحفظ والتصدير ====================
-def save_report():
-    """حفظ التقرير الحالي"""
-    try:
-        date = st.session_state.get('endDate', '')
-        if not date:
-            st.error('يرجى اختيار التاريخ')
-            return
-        day = st.session_state.get('endDaySelect', 6)
-        week = st.session_state.get('customWeekNumber', 21)
-        day_name = get_day_name(day)
-        name = f"{date} - {day_name} - أسبوع {week}"
-        
-        report_data = collect_data()
-        report_data['id'] = datetime.now().timestamp()
-        report_data['name'] = name
-        
-        st.session_state.reports_db.insert(0, report_data)
-        if len(st.session_state.reports_db) > 100:
-            st.session_state.reports_db.pop()
-        
-        st.success('تم حفظ التقرير بنجاح!')
-    except Exception as e:
-        st.error(f'خطأ في الحفظ: {str(e)}')
-
-def export_pdf():
-    """تصدير التقرير كـ PDF"""
-    try:
-        # هنا سيتم إنشاء PDF باستخدام ReportLab
-        st.success('✅ تم استخراج PDF بنجاح!')
-        st.info('سيتم تحميل ملف PDF...')
-    except Exception as e:
-        st.error(f'خطأ في PDF: {str(e)}')
-
-def reset_all():
-    """مسح جميع الحقول"""
-    for key in list(st.session_state.keys()):
-        if key.startswith(('out_', 'rand_', 'school_')):
-            st.session_state[key] = ''
-    st.success('تم مسح جميع الحقول')
-
-# ==================== أزرار التحكم ====================
-col1, col2, col3, col4 = st.columns([1, 1, 1, 3])
-with col1:
-    if st.button("💾 حفظ التقرير", use_container_width=True):
-        save_report()
-with col2:
-    if st.button("📄 استخراج PDF", use_container_width=True):
-        export_pdf()
-with col3:
-    if st.button("🧹 مسح الخلايا", use_container_width=True):
-        reset_all()
-
-# ==================== التهيئة الأولية ====================
-if 'initialized' not in st.session_state:
-    st.session_state['initialized'] = True
-    st.session_state['endDate'] = '2026-05-24'
-    st.session_state['endDaySelect'] = 6
-    st.session_state['customWeekNumber'] = 21
-    st.session_state['auto_week'] = True
-    
-    # تهيئة الحقول الفارغة
-    for prefix in ['out', 'rand', 'school']:
-        for i in range(26):
-            key = f'{prefix}_{i}'
-            if key not in st.session_state:
-                st.session_state[key] = ''
-    
-    st.rerun()
+# ==================== التحديث التلقائي للأسبوع ====================
+if st.session_state.get('auto_week', True):
+    week_num = get_iso_week_number(end_date)
+    if st.session_state.get('customWeekNumber') != week_num:
+        st.session_state.customWeekNumber = week_num
