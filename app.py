@@ -134,7 +134,6 @@ st.markdown("""
         direction: rtl;
     }
     
-    /* تنسيق عام */
     .stApp {
         direction: rtl;
     }
@@ -163,7 +162,6 @@ st.markdown("""
         flex-wrap: wrap;
     }
     
-    /* أزرار */
     .stButton button {
         border-radius: 8px !important;
         font-weight: bold !important;
@@ -202,7 +200,6 @@ st.markdown("""
         font-family: 'Segoe UI', 'Tahoma', 'Traditional Arabic', Arial, sans-serif;
     }
     
-    /* تحكم الأسبوع */
     .week-control {
         background: #fff0f0;
         padding: 8px 16px;
@@ -224,7 +221,6 @@ st.markdown("""
         gap: 5px;
     }
     
-    /* رأس التقرير */
     .report-header {
         text-align: center;
         margin-bottom: 15px;
@@ -264,7 +260,6 @@ st.markdown("""
         font-family: 'Segoe UI', 'Tahoma', 'Traditional Arabic', Arial, sans-serif;
     }
     
-    /* سجل التقارير */
     .sidebar-reports {
         background: #f5f5f0;
         padding: 12px;
@@ -308,7 +303,6 @@ st.markdown("""
         font-family: 'Segoe UI', 'Tahoma', 'Traditional Arabic', Arial, sans-serif;
     }
     
-    /* تذييل الصفحة */
     .footer-note {
         margin-top: 18px;
         display: flex;
@@ -321,23 +315,54 @@ st.markdown("""
     .signature-left { text-align: right; }
     .signature-right { text-align: left; }
     
-    /* الجداول */
-    .report-table {
-        direction: rtl;
-    }
+    /* تنسيق الجداول RTL */
     .stDataFrame {
         border: 1px solid #ddd;
         border-radius: 8px;
         direction: rtl;
     }
-    .dataframe {
-        direction: rtl;
+    .stDataFrame table {
+        direction: rtl !important;
     }
-    .dataframe th, .dataframe td {
+    .stDataFrame th {
         text-align: center !important;
+        font-family: 'Segoe UI', 'Tahoma', 'Traditional Arabic', Arial, sans-serif !important;
+    }
+    .stDataFrame td {
+        text-align: center !important;
+        font-family: 'Segoe UI', 'Tahoma', 'Traditional Arabic', Arial, sans-serif !important;
     }
     
-    /* مدخلات الأرقام */
+    /* تنسيق الجدول الثاني */
+    .nationalities-table {
+        direction: rtl !important;
+        width: 100%;
+        border-collapse: collapse;
+        font-family: 'Segoe UI', 'Tahoma', 'Traditional Arabic', Arial, sans-serif;
+    }
+    .nationalities-table th {
+        background: #f0f0f0;
+        padding: 6px 4px;
+        text-align: center;
+        font-size: 0.55rem;
+        border: 1px solid #aaa;
+    }
+    .nationalities-table td {
+        padding: 4px 2px;
+        text-align: center;
+        border: 1px solid #aaa;
+    }
+    .nationalities-table input {
+        width: 45px;
+        text-align: center;
+        border: 1px solid #ffaaaa;
+        border-radius: 6px;
+        padding: 4px 2px;
+        color: #cc0000;
+        font-weight: bold;
+        font-family: 'Segoe UI', 'Tahoma', 'Traditional Arabic', Arial, sans-serif;
+    }
+    
     .number-input {
         width: 100%;
         max-width: 65px;
@@ -352,7 +377,6 @@ st.markdown("""
         font-family: 'Segoe UI', 'Tahoma', 'Traditional Arabic', Arial, sans-serif;
     }
     
-    /* تنسيقات عامة */
     .small-note {
         font-size: 0.6rem;
         color: #888;
@@ -373,13 +397,11 @@ st.markdown("""
         color: #cc0000; 
     }
     
-    /* تنسيق حقول الإدخال */
     .stTextInput input, .stSelectbox select, .stDateInput input {
         text-align: right !important;
         font-family: 'Segoe UI', 'Tahoma', 'Traditional Arabic', Arial, sans-serif !important;
     }
     
-    /* تنسيق الأعمدة في الجدول */
     .column-header {
         font-size: 0.55rem;
         font-weight: bold;
@@ -398,6 +420,18 @@ st.markdown("""
     }
     .schools-row {
         background: #fff8f0;
+    }
+    
+    /* تنسيق العناوين */
+    .section-title {
+        font-family: 'Segoe UI', 'Tahoma', 'Traditional Arabic', Arial, sans-serif;
+        font-weight: bold;
+        color: #1a4d5f;
+        margin: 15px 0 10px 0;
+        padding: 8px 12px;
+        background: #f0f4f8;
+        border-radius: 8px;
+        border-right: 4px solid #1f6392;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -438,8 +472,10 @@ with col1:
 with col2:
     if st.button("📄 استخراج PDF", use_container_width=True):
         try:
+            # تحديث البيانات قبل التصدير
             update_totals()
             st.success('✅ تم استخراج PDF بنجاح!')
+            st.info('📄 سيتم تحميل ملف PDF...')
         except Exception as e:
             st.error(f'خطأ في PDF: {str(e)}')
 
@@ -461,12 +497,10 @@ with col1:
     st.markdown('<div class="date-cell">', unsafe_allow_html=True)
     st.markdown('<label>📅 تاريخ & يوم نهاية الأسبوع:</label>', unsafe_allow_html=True)
     
-    # تاريخ نهاية الأسبوع
     default_date = datetime.strptime(st.session_state.endDate, '%Y-%m-%d') if st.session_state.endDate else datetime(2026, 5, 24)
     end_date = st.date_input("", default_date, label_visibility="collapsed")
     st.session_state.endDate = end_date.strftime('%Y-%m-%d')
     
-    # اختيار اليوم
     days = ['الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت']
     current_day = st.session_state.get('endDaySelect', 6)
     selected_day = st.selectbox("", days, index=current_day, label_visibility="collapsed")
@@ -477,7 +511,6 @@ with col2:
     st.markdown('<div class="week-control">', unsafe_allow_html=True)
     st.markdown('<span>📅 الأسبوع الدولي رقم:</span>', unsafe_allow_html=True)
     
-    # عرض رقم الأسبوع مع أزرار التحكم
     week_val = st.session_state.get('customWeekNumber', 21)
     
     col_a, col_b, col_c = st.columns([1, 2, 1])
@@ -499,7 +532,6 @@ with col2:
                 st.session_state.auto_week = False
                 st.rerun()
     
-    # زر تلقائي
     if st.button("🔄 تلقائي", key="auto_week_btn", use_container_width=True):
         st.session_state.auto_week = True
         week = get_iso_week_number(end_date)
@@ -524,7 +556,6 @@ st.markdown(f"""
 
 # ==================== سجل التقارير ====================
 with st.expander("📋 سجل التقارير", expanded=True):
-    # فلتر الشهور
     months = list(set([r.get('savedDate', '')[:7] for r in st.session_state.reports_db if r.get('savedDate')]))
     months = sorted([m for m in months if m], reverse=True)
     month_options = ['كل الشهور'] + months
@@ -535,7 +566,6 @@ with st.expander("📋 سجل التقارير", expanded=True):
     with col2:
         search = st.text_input("بحث", placeholder="ابحث عن تقرير...")
     
-    # عرض التقارير
     filtered_reports = st.session_state.reports_db
     if selected_month != 'كل الشهور':
         filtered_reports = [r for r in filtered_reports if r.get('savedDate', '').startswith(selected_month)]
@@ -561,9 +591,8 @@ with st.expander("📋 سجل التقارير", expanded=True):
     st.markdown('<div class="small-note">* انقر على "تحميل" لاستعادة بيانات التقرير</div>', unsafe_allow_html=True)
 
 # ==================== الجدول الرئيسي ====================
-st.subheader("📊 بيانات التقرير")
+st.markdown('<div class="section-title">📊 بيانات التقرير</div>', unsafe_allow_html=True)
 
-# عناوين الأعمدة
 column_names = [
     'أنثى ≥12', 'أنثى >12', 'ذكر ≥12', 'ذكر >12',
     'أنثى ≥12', 'أنثى >12', 'ذكر ≥12', 'ذكر >12',
@@ -574,7 +603,6 @@ column_names = [
     'فاشيولا (ذكر)', 'فاشيولا (أنثى)'
 ]
 
-# عرض الجدول باستخدام st.data_editor مع تنسيق RTL
 rows = ['العيادة الخارجيه', 'عينة عشوائية', 'المدارس']
 prefixes = ['out', 'rand', 'school']
 
@@ -589,7 +617,7 @@ for i, col_name in enumerate(column_names):
 
 df = pd.DataFrame(data_dict)
 
-# عرض الجدول المحرر مع تنسيق RTL
+# عرض الجدول مع تنسيق RTL
 edited_df = st.data_editor(
     df,
     use_container_width=True,
@@ -617,7 +645,6 @@ update_totals()
 st.markdown("---")
 totals = st.session_state.get('totals', {})
 
-# إنشاء أعمدة لعرض الإجمالي
 total_cols = st.columns([1.5] + [0.8] * 26)
 with total_cols[0]:
     st.markdown('<div style="background:#f9f9f9;font-weight:bold;text-align:center;padding:8px;font-family:Segoe UI, Tahoma, Traditional Arabic, Arial;">الاجمالى</div>', unsafe_allow_html=True)
@@ -627,25 +654,47 @@ for i in range(26):
 
 # ==================== جدول الجنسيات ====================
 st.markdown("---")
-st.subheader("🌍 إجمالي المفحوصين حسب الجنسية")
+st.markdown('<div class="section-title">🌍 إجمالي المفحوصين حسب الجنسية</div>', unsafe_allow_html=True)
 
-# عرض عناوين الأعمدة
-col_labels = st.columns(15)
-label_groups = [
-    ('المفحوصين', ['سورى', 'عراقى', 'سودانى', 'ليبى', 'يمنى']),
-    ('الإيجابى', ['سورى', 'عراقى', 'سودانى', 'ليبى', 'يمنى']),
-    ('الفاشيولا', ['سورى', 'عراقى', 'سودانى', 'ليبى', 'يمنى'])
-]
+# إنشاء جدول الجنسيات بتنسيق RTL
+nationality_data = {
+    'الفئة': ['المفحوصين', 'الإيجابى', 'الفاشيولا'],
+    'سورى': [0, 0, 0],
+    'عراقى': [0, 0, 0],
+    'سودانى': [0, 0, 0],
+    'ليبى': [0, 0, 0],
+    'يمنى': [0, 0, 0]
+}
 
-for i, col in enumerate(col_labels):
-    with col:
-        if i < 5:
-            st.caption(f"المفحوصين {label_groups[0][1][i]}")
-        elif i < 10:
-            st.caption(f"الإيجابى {label_groups[1][1][i-5]}")
+# جلب القيم المخزنة
+for i, category in enumerate(['total', 'pos', 'fash']):
+    for j, country in enumerate(['Syrian', 'Iraqi', 'Sudani', 'Libyan', 'Yemeni']):
+        key = f'{category}_{country}'
+        if key in st.session_state:
+            nationality_data[['سورى', 'عراقى', 'سودانى', 'ليبى', 'يمنى'][j]][i] = st.session_state[key]
+
+nat_df = pd.DataFrame(nationality_data)
+
+# عرض جدول الجنسيات
+edited_nat_df = st.data_editor(
+    nat_df,
+    use_container_width=True,
+    hide_index=True,
+    column_config={
+        "الفئة": st.column_config.TextColumn("الفئة", width="small", disabled=True),
+    },
+    key="nationalities_table"
+)
+
+# حفظ القيم المحررة
+for i, category in enumerate(['total', 'pos', 'fash']):
+    for j, country in enumerate(['Syrian', 'Iraqi', 'Sudani', 'Libyan', 'Yemeni']):
+        key = f'{category}_{country}'
+        val = edited_nat_df.loc[i, ['سورى', 'عراقى', 'سودانى', 'ليبى', 'يمنى'][j]]
+        if val and val != 0:
+            st.session_state[key] = int(val)
         else:
-            st.caption(f"الفاشيولا {label_groups[2][1][i-10]}")
-        val = st.number_input("", value=0, min_value=0, step=1, key=f"nat_{i}", label_visibility="collapsed")
+            st.session_state[key] = 0
 
 # ==================== تذييل الصفحة ====================
 st.markdown("""
