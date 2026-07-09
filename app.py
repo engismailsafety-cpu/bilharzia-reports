@@ -126,9 +126,20 @@ def update_totals():
         totals[f'sum{i+1}'] = total
     st.session_state['totals'] = totals
 
-# ==================== CSS المخصص ====================
+# ==================== CSS المخصص - RTL ====================
 st.markdown("""
-    <style>
+<style>
+    /* RTL Direction */
+    .main > div {
+        direction: rtl;
+    }
+    
+    /* تنسيق عام */
+    .stApp {
+        direction: rtl;
+    }
+    
+    /* شريط التحكم */
     .main-header {
         background: linear-gradient(135deg, #f5f5f5 0%, #e8e8e8 100%);
         padding: 15px 20px;
@@ -139,6 +150,7 @@ st.markdown("""
         justify-content: space-between;
         align-items: center;
         flex-wrap: wrap;
+        direction: rtl;
     }
     .main-header h1 {
         color: #136b5e;
@@ -150,10 +162,15 @@ st.markdown("""
         gap: 10px;
         flex-wrap: wrap;
     }
+    
+    /* أزرار */
     .stButton button {
         border-radius: 8px !important;
         font-weight: bold !important;
+        font-family: 'Segoe UI', 'Tahoma', 'Traditional Arabic', Arial, sans-serif !important;
     }
+    
+    /* لوحة التاريخ */
     .date-panel {
         background: #fafafa;
         padding: 15px 20px;
@@ -165,6 +182,7 @@ st.markdown("""
         align-items: center;
         justify-content: space-between;
         gap: 15px;
+        direction: rtl;
     }
     .date-cell {
         background: #fff8f0;
@@ -175,12 +193,16 @@ st.markdown("""
         align-items: center;
         gap: 15px;
         flex-wrap: wrap;
+        direction: rtl;
     }
     .date-cell label {
         font-weight: bold;
         color: #cc0000;
         font-size: 0.9rem;
+        font-family: 'Segoe UI', 'Tahoma', 'Traditional Arabic', Arial, sans-serif;
     }
+    
+    /* تحكم الأسبوع */
     .week-control {
         background: #fff0f0;
         padding: 8px 16px;
@@ -189,27 +211,39 @@ st.markdown("""
         display: flex;
         align-items: center;
         gap: 10px;
+        direction: rtl;
     }
     .week-control span {
         font-weight: bold;
         color: #cc0000;
+        font-family: 'Segoe UI', 'Tahoma', 'Traditional Arabic', Arial, sans-serif;
     }
+    .week-spinner {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+    
+    /* رأس التقرير */
     .report-header {
         text-align: center;
         margin-bottom: 15px;
         padding: 10px;
         background: #ffffff;
         border-radius: 8px;
+        direction: rtl;
     }
     .report-header h2 {
         font-size: 1rem;
         margin: 3px 0;
         color: #1a5f6e;
+        font-family: 'Segoe UI', 'Tahoma', 'Traditional Arabic', Arial, sans-serif;
     }
     .report-header .subtitle {
         font-size: 0.8rem;
         color: #2f6b47;
         font-weight: bold;
+        font-family: 'Segoe UI', 'Tahoma', 'Traditional Arabic', Arial, sans-serif;
     }
     .page-title {
         font-size: 0.9rem;
@@ -220,19 +254,24 @@ st.markdown("""
         border-radius: 8px;
         margin-top: 8px;
         border: 1px solid #ffcccc;
+        font-family: 'Segoe UI', 'Tahoma', 'Traditional Arabic', Arial, sans-serif;
     }
     .report-date-red {
         color: #cc0000;
         font-weight: bold;
         font-size: 0.75rem;
         margin-top: 5px;
+        font-family: 'Segoe UI', 'Tahoma', 'Traditional Arabic', Arial, sans-serif;
     }
+    
+    /* سجل التقارير */
     .sidebar-reports {
         background: #f5f5f0;
         padding: 12px;
         border-radius: 12px;
         border: 1px solid #ddd;
         margin-bottom: 20px;
+        direction: rtl;
     }
     .sidebar-reports .header {
         display: flex;
@@ -257,6 +296,7 @@ st.markdown("""
         align-items: center;
         border: 1px solid #e0e0e0;
         cursor: pointer;
+        direction: rtl;
     }
     .report-item:hover {
         background: #e8f0fe;
@@ -265,7 +305,10 @@ st.markdown("""
     .report-date {
         font-weight: bold;
         color: #1f6392;
+        font-family: 'Segoe UI', 'Tahoma', 'Traditional Arabic', Arial, sans-serif;
     }
+    
+    /* تذييل الصفحة */
     .footer-note {
         margin-top: 18px;
         display: flex;
@@ -273,30 +316,28 @@ st.markdown("""
         border-top: 1px solid #ddd;
         padding-top: 12px;
         font-size: 0.7rem;
+        direction: rtl;
     }
     .signature-left { text-align: right; }
     .signature-right { text-align: left; }
-    .totals-row {
-        background: #f9f9f9;
-        font-weight: bold;
+    
+    /* الجداول */
+    .report-table {
+        direction: rtl;
     }
-    .schools-row {
-        background: #fff8f0;
-    }
-    .subgroup {
-        background: #f5f5f5;
-        font-weight: bold;
-    }
-    .monthly-stats {
-        background: #e8f0fe;
-        padding: 8px 12px;
+    .stDataFrame {
+        border: 1px solid #ddd;
         border-radius: 8px;
-        margin: 8px 0;
-        font-size: 0.75rem;
-        color: #1f6392;
+        direction: rtl;
     }
-    .monthly-stats span { font-weight: bold; color: #cc0000; }
-    .stDataFrame { border: 1px solid #ddd; border-radius: 8px; }
+    .dataframe {
+        direction: rtl;
+    }
+    .dataframe th, .dataframe td {
+        text-align: center !important;
+    }
+    
+    /* مدخلات الأرقام */
     .number-input {
         width: 100%;
         max-width: 65px;
@@ -308,13 +349,57 @@ st.markdown("""
         background: #ffffff;
         color: #cc0000;
         font-weight: bold;
+        font-family: 'Segoe UI', 'Tahoma', 'Traditional Arabic', Arial, sans-serif;
     }
+    
+    /* تنسيقات عامة */
     .small-note {
         font-size: 0.6rem;
         color: #888;
         margin-top: 5px;
+        font-family: 'Segoe UI', 'Tahoma', 'Traditional Arabic', Arial, sans-serif;
     }
-    </style>
+    .monthly-stats {
+        background: #e8f0fe;
+        padding: 8px 12px;
+        border-radius: 8px;
+        margin: 8px 0;
+        font-size: 0.75rem;
+        color: #1f6392;
+        font-family: 'Segoe UI', 'Tahoma', 'Traditional Arabic', Arial, sans-serif;
+    }
+    .monthly-stats span { 
+        font-weight: bold; 
+        color: #cc0000; 
+    }
+    
+    /* تنسيق حقول الإدخال */
+    .stTextInput input, .stSelectbox select, .stDateInput input {
+        text-align: right !important;
+        font-family: 'Segoe UI', 'Tahoma', 'Traditional Arabic', Arial, sans-serif !important;
+    }
+    
+    /* تنسيق الأعمدة في الجدول */
+    .column-header {
+        font-size: 0.55rem;
+        font-weight: bold;
+        text-align: center;
+        padding: 4px 2px;
+        font-family: 'Segoe UI', 'Tahoma', 'Traditional Arabic', Arial, sans-serif;
+    }
+    .subgroup {
+        background: #f5f5f5;
+        font-weight: bold;
+        font-family: 'Segoe UI', 'Tahoma', 'Traditional Arabic', Arial, sans-serif;
+    }
+    .totals-row {
+        background: #f9f9f9;
+        font-weight: bold;
+    }
+    .schools-row {
+        background: #fff8f0;
+    }
+</style>
 """, unsafe_allow_html=True)
 
 # ==================== شريط التحكم ====================
@@ -478,10 +563,6 @@ with st.expander("📋 سجل التقارير", expanded=True):
 # ==================== الجدول الرئيسي ====================
 st.subheader("📊 بيانات التقرير")
 
-# إنشاء DataFrame للجدول
-rows = ['العيادة الخارجيه', 'عينة عشوائية', 'المدارس']
-prefixes = ['out', 'rand', 'school']
-
 # عناوين الأعمدة
 column_names = [
     'أنثى ≥12', 'أنثى >12', 'ذكر ≥12', 'ذكر >12',
@@ -493,7 +574,10 @@ column_names = [
     'فاشيولا (ذكر)', 'فاشيولا (أنثى)'
 ]
 
-# عرض الجدول باستخدام st.data_editor
+# عرض الجدول باستخدام st.data_editor مع تنسيق RTL
+rows = ['العيادة الخارجيه', 'عينة عشوائية', 'المدارس']
+prefixes = ['out', 'rand', 'school']
+
 data_dict = {'الإدارة': rows}
 for i, col_name in enumerate(column_names):
     col_values = []
@@ -505,14 +589,15 @@ for i, col_name in enumerate(column_names):
 
 df = pd.DataFrame(data_dict)
 
-# عرض الجدول المحرر
+# عرض الجدول المحرر مع تنسيق RTL
 edited_df = st.data_editor(
     df,
     use_container_width=True,
     hide_index=True,
     column_config={
         "الإدارة": st.column_config.TextColumn("الإدارة", width="small", disabled=True),
-    }
+    },
+    key="main_table"
 )
 
 # حفظ القيم المحررة
@@ -531,32 +616,35 @@ update_totals()
 # عرض صف الإجمالي
 st.markdown("---")
 totals = st.session_state.get('totals', {})
-cols = st.columns([1.5] + [0.8] * 26)
-with cols[0]:
-    st.markdown('<div style="background:#f9f9f9;font-weight:bold;text-align:center;padding:8px;">الاجمالى</div>', unsafe_allow_html=True)
+
+# إنشاء أعمدة لعرض الإجمالي
+total_cols = st.columns([1.5] + [0.8] * 26)
+with total_cols[0]:
+    st.markdown('<div style="background:#f9f9f9;font-weight:bold;text-align:center;padding:8px;font-family:Segoe UI, Tahoma, Traditional Arabic, Arial;">الاجمالى</div>', unsafe_allow_html=True)
 for i in range(26):
-    with cols[i+1]:
-        st.markdown(f'<div style="background:#f9f9f9;font-weight:bold;text-align:center;padding:8px;">{totals.get(f"sum{i+1}", 0)}</div>', unsafe_allow_html=True)
+    with total_cols[i+1]:
+        st.markdown(f'<div style="background:#f9f9f9;font-weight:bold;text-align:center;padding:8px;font-family:Segoe UI, Tahoma, Traditional Arabic, Arial;color:#1a4d5f;">{totals.get(f"sum{i+1}", 0)}</div>', unsafe_allow_html=True)
 
 # ==================== جدول الجنسيات ====================
 st.markdown("---")
 st.subheader("🌍 إجمالي المفحوصين حسب الجنسية")
 
-nationalities_cols = st.columns(15)
-nationality_labels = [
-    'سورى', 'عراقى', 'سودانى', 'ليبى', 'يمنى',
-    'سورى', 'عراقى', 'سودانى', 'ليبى', 'يمنى',
-    'سورى', 'عراقى', 'سودانى', 'ليبى', 'يمنى'
+# عرض عناوين الأعمدة
+col_labels = st.columns(15)
+label_groups = [
+    ('المفحوصين', ['سورى', 'عراقى', 'سودانى', 'ليبى', 'يمنى']),
+    ('الإيجابى', ['سورى', 'عراقى', 'سودانى', 'ليبى', 'يمنى']),
+    ('الفاشيولا', ['سورى', 'عراقى', 'سودانى', 'ليبى', 'يمنى'])
 ]
 
-for i, (col, label) in enumerate(zip(nationalities_cols, nationality_labels)):
+for i, col in enumerate(col_labels):
     with col:
         if i < 5:
-            st.caption(f"المفحوصين {label}")
+            st.caption(f"المفحوصين {label_groups[0][1][i]}")
         elif i < 10:
-            st.caption(f"الإيجابى {label}")
+            st.caption(f"الإيجابى {label_groups[1][1][i-5]}")
         else:
-            st.caption(f"الفاشيولا {label}")
+            st.caption(f"الفاشيولا {label_groups[2][1][i-10]}")
         val = st.number_input("", value=0, min_value=0, step=1, key=f"nat_{i}", label_visibility="collapsed")
 
 # ==================== تذييل الصفحة ====================
