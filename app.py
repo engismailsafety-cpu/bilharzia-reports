@@ -51,6 +51,13 @@ def init_session_state():
             if key not in st.session_state:
                 st.session_state[key] = ''
     
+    # تهيئة حقول الجنسيات
+    for category in ['total', 'pos', 'fash']:
+        for country in ['Syrian', 'Iraqi', 'Sudani', 'Libyan', 'Yemeni']:
+            key = f'{category}_{country}'
+            if key not in st.session_state:
+                st.session_state[key] = 0
+    
     if 'initialized' not in st.session_state:
         st.session_state.initialized = True
 
@@ -315,11 +322,11 @@ st.markdown("""
     .signature-left { text-align: right; }
     .signature-right { text-align: left; }
     
-    /* تنسيق الجداول RTL */
+    /* تنسيق الجداول RTL - عكس الأعمدة */
     .stDataFrame {
         border: 1px solid #ddd;
         border-radius: 8px;
-        direction: rtl;
+        direction: rtl !important;
     }
     .stDataFrame table {
         direction: rtl !important;
@@ -333,48 +340,22 @@ st.markdown("""
         font-family: 'Segoe UI', 'Tahoma', 'Traditional Arabic', Arial, sans-serif !important;
     }
     
-    /* تنسيق الجدول الثاني */
-    .nationalities-table {
-        direction: rtl !important;
-        width: 100%;
-        border-collapse: collapse;
-        font-family: 'Segoe UI', 'Tahoma', 'Traditional Arabic', Arial, sans-serif;
-    }
-    .nationalities-table th {
-        background: #f0f0f0;
-        padding: 6px 4px;
-        text-align: center;
-        font-size: 0.55rem;
-        border: 1px solid #aaa;
-    }
-    .nationalities-table td {
-        padding: 4px 2px;
-        text-align: center;
-        border: 1px solid #aaa;
-    }
-    .nationalities-table input {
-        width: 45px;
-        text-align: center;
-        border: 1px solid #ffaaaa;
-        border-radius: 6px;
-        padding: 4px 2px;
-        color: #cc0000;
-        font-weight: bold;
-        font-family: 'Segoe UI', 'Tahoma', 'Traditional Arabic', Arial, sans-serif;
+    /* عكس ترتيب الأعمدة في الجدول */
+    .stDataFrame table tr th:first-child,
+    .stDataFrame table tr td:first-child {
+        order: 1 !important;
     }
     
-    .number-input {
-        width: 100%;
-        max-width: 65px;
-        text-align: center;
-        border: 1px solid #ffaaaa;
-        border-radius: 6px;
-        padding: 5px 2px;
-        font-size: 0.7rem;
-        background: #ffffff;
-        color: #cc0000;
-        font-weight: bold;
+    .section-title {
         font-family: 'Segoe UI', 'Tahoma', 'Traditional Arabic', Arial, sans-serif;
+        font-weight: bold;
+        color: #1a4d5f;
+        margin: 15px 0 10px 0;
+        padding: 8px 12px;
+        background: #f0f4f8;
+        border-radius: 8px;
+        border-right: 4px solid #1f6392;
+        text-align: right;
     }
     
     .small-note {
@@ -402,18 +383,6 @@ st.markdown("""
         font-family: 'Segoe UI', 'Tahoma', 'Traditional Arabic', Arial, sans-serif !important;
     }
     
-    .column-header {
-        font-size: 0.55rem;
-        font-weight: bold;
-        text-align: center;
-        padding: 4px 2px;
-        font-family: 'Segoe UI', 'Tahoma', 'Traditional Arabic', Arial, sans-serif;
-    }
-    .subgroup {
-        background: #f5f5f5;
-        font-weight: bold;
-        font-family: 'Segoe UI', 'Tahoma', 'Traditional Arabic', Arial, sans-serif;
-    }
     .totals-row {
         background: #f9f9f9;
         font-weight: bold;
@@ -422,16 +391,21 @@ st.markdown("""
         background: #fff8f0;
     }
     
-    /* تنسيق العناوين */
-    .section-title {
-        font-family: 'Segoe UI', 'Tahoma', 'Traditional Arabic', Arial, sans-serif;
+    /* تنسيق الإجمالي */
+    .totals-label {
+        background: #f9f9f9;
         font-weight: bold;
+        text-align: center;
+        padding: 8px;
+        font-family: 'Segoe UI', 'Tahoma', 'Traditional Arabic', Arial, sans-serif;
+    }
+    .totals-value {
+        background: #f9f9f9;
+        font-weight: bold;
+        text-align: center;
+        padding: 8px;
+        font-family: 'Segoe UI', 'Tahoma', 'Traditional Arabic', Arial, sans-serif;
         color: #1a4d5f;
-        margin: 15px 0 10px 0;
-        padding: 8px 12px;
-        background: #f0f4f8;
-        border-radius: 8px;
-        border-right: 4px solid #1f6392;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -472,7 +446,6 @@ with col1:
 with col2:
     if st.button("📄 استخراج PDF", use_container_width=True):
         try:
-            # تحديث البيانات قبل التصدير
             update_totals()
             st.success('✅ تم استخراج PDF بنجاح!')
             st.info('📄 سيتم تحميل ملف PDF...')
@@ -485,6 +458,10 @@ with col3:
             for i in range(26):
                 key = f'{prefix}_{i}'
                 st.session_state[key] = ''
+        for category in ['total', 'pos', 'fash']:
+            for country in ['Syrian', 'Iraqi', 'Sudani', 'Libyan', 'Yemeni']:
+                key = f'{category}_{country}'
+                st.session_state[key] = 0
         update_totals()
         st.success('✅ تم مسح جميع الحقول')
 
@@ -590,24 +567,25 @@ with st.expander("📋 سجل التقارير", expanded=True):
     
     st.markdown('<div class="small-note">* انقر على "تحميل" لاستعادة بيانات التقرير</div>', unsafe_allow_html=True)
 
-# ==================== الجدول الرئيسي ====================
+# ==================== الجدول الرئيسي (مع أعمدة RTL) ====================
 st.markdown('<div class="section-title">📊 بيانات التقرير</div>', unsafe_allow_html=True)
 
-column_names = [
-    'أنثى ≥12', 'أنثى >12', 'ذكر ≥12', 'ذكر >12',
-    'أنثى ≥12', 'أنثى >12', 'ذكر ≥12', 'ذكر >12',
-    'بولية أنثى ≥12', 'بولية أنثى >12', 'بولية ذكر ≥12', 'بولية ذكر >12',
-    'معوية أنثى ≥12', 'معوية أنثى >12', 'معوية ذكر ≥12', 'معوية ذكر >12',
-    'بولية أجنبى أنثى ≥12', 'بولية أجنبى أنثى >12', 'بولية أجنبى ذكر ≥12', 'بولية أجنبى ذكر >12',
-    'معوية أجنبى أنثى ≥12', 'معوية أجنبى أنثى >12', 'معوية أجنبى ذكر ≥12', 'معوية أجنبى ذكر >12',
-    'فاشيولا (ذكر)', 'فاشيولا (أنثى)'
+# تعريف الأعمدة بالترتيب من اليمين لليسار (معكوس)
+column_names_reversed = [
+    'فاشيولا (أنثى)', 'فاشيولا (ذكر)',
+    'معوية أجنبى ذكر >12', 'معوية أجنبى ذكر ≥12', 'معوية أجنبى أنثى >12', 'معوية أجنبى أنثى ≥12',
+    'بولية أجنبى ذكر >12', 'بولية أجنبى ذكر ≥12', 'بولية أجنبى أنثى >12', 'بولية أجنبى أنثى ≥12',
+    'معوية ذكر >12', 'معوية ذكر ≥12', 'معوية أنثى >12', 'معوية أنثى ≥12',
+    'بولية ذكر >12', 'بولية ذكر ≥12', 'بولية أنثى >12', 'بولية أنثى ≥12',
+    'ذكر >12', 'ذكر ≥12', 'أنثى >12', 'أنثى ≥12',
+    'ذكر >12', 'ذكر ≥12', 'أنثى >12', 'أنثى ≥12'
 ]
 
 rows = ['العيادة الخارجيه', 'عينة عشوائية', 'المدارس']
 prefixes = ['out', 'rand', 'school']
 
 data_dict = {'الإدارة': rows}
-for i, col_name in enumerate(column_names):
+for i, col_name in enumerate(column_names_reversed):
     col_values = []
     for prefix in prefixes:
         key = f'{prefix}_{i}'
@@ -630,7 +608,7 @@ edited_df = st.data_editor(
 
 # حفظ القيم المحررة
 for i, row_name in enumerate(rows):
-    for j, col_name in enumerate(column_names):
+    for j, col_name in enumerate(column_names_reversed):
         key = f'{prefixes[i]}_{j}'
         val = edited_df.loc[i, col_name]
         if val and val != 0:
@@ -641,37 +619,41 @@ for i, row_name in enumerate(rows):
 # تحديث الإجماليات
 update_totals()
 
-# عرض صف الإجمالي
+# عرض صف الإجمالي (معكوس الأعمدة)
 st.markdown("---")
 totals = st.session_state.get('totals', {})
 
 total_cols = st.columns([1.5] + [0.8] * 26)
 with total_cols[0]:
-    st.markdown('<div style="background:#f9f9f9;font-weight:bold;text-align:center;padding:8px;font-family:Segoe UI, Tahoma, Traditional Arabic, Arial;">الاجمالى</div>', unsafe_allow_html=True)
+    st.markdown('<div class="totals-label">الاجمالى</div>', unsafe_allow_html=True)
 for i in range(26):
     with total_cols[i+1]:
-        st.markdown(f'<div style="background:#f9f9f9;font-weight:bold;text-align:center;padding:8px;font-family:Segoe UI, Tahoma, Traditional Arabic, Arial;color:#1a4d5f;">{totals.get(f"sum{i+1}", 0)}</div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="totals-value">{totals.get(f"sum{i+1}", 0)}</div>', unsafe_allow_html=True)
 
-# ==================== جدول الجنسيات ====================
+# ==================== جدول الجنسيات (مع أعمدة RTL) ====================
 st.markdown("---")
 st.markdown('<div class="section-title">🌍 إجمالي المفحوصين حسب الجنسية</div>', unsafe_allow_html=True)
 
-# إنشاء جدول الجنسيات بتنسيق RTL
+# أعمدة الجنسيات بالترتيب من اليمين لليسار
+country_names = ['يمنى', 'ليبى', 'سودانى', 'عراقى', 'سورى']
+
+# البيانات معكوسة
 nationality_data = {
     'الفئة': ['المفحوصين', 'الإيجابى', 'الفاشيولا'],
-    'سورى': [0, 0, 0],
-    'عراقى': [0, 0, 0],
-    'سودانى': [0, 0, 0],
+    'يمنى': [0, 0, 0],
     'ليبى': [0, 0, 0],
-    'يمنى': [0, 0, 0]
+    'سودانى': [0, 0, 0],
+    'عراقى': [0, 0, 0],
+    'سورى': [0, 0, 0]
 }
 
 # جلب القيم المخزنة
+country_keys_reversed = ['Yemeni', 'Libyan', 'Sudani', 'Iraqi', 'Syrian']
 for i, category in enumerate(['total', 'pos', 'fash']):
-    for j, country in enumerate(['Syrian', 'Iraqi', 'Sudani', 'Libyan', 'Yemeni']):
+    for j, country in enumerate(country_keys_reversed):
         key = f'{category}_{country}'
-        if key in st.session_state:
-            nationality_data[['سورى', 'عراقى', 'سودانى', 'ليبى', 'يمنى'][j]][i] = st.session_state[key]
+        val = st.session_state.get(key, 0)
+        nationality_data[country_names[j]][i] = val
 
 nat_df = pd.DataFrame(nationality_data)
 
@@ -688,9 +670,9 @@ edited_nat_df = st.data_editor(
 
 # حفظ القيم المحررة
 for i, category in enumerate(['total', 'pos', 'fash']):
-    for j, country in enumerate(['Syrian', 'Iraqi', 'Sudani', 'Libyan', 'Yemeni']):
+    for j, country in enumerate(country_keys_reversed):
         key = f'{category}_{country}'
-        val = edited_nat_df.loc[i, ['سورى', 'عراقى', 'سودانى', 'ليبى', 'يمنى'][j]]
+        val = edited_nat_df.loc[i, country_names[j]]
         if val and val != 0:
             st.session_state[key] = int(val)
         else:
